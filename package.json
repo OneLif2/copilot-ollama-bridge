@@ -1,0 +1,12 @@
+{
+  "name": "copilot-ollama-bridge",
+  "version": "1.0.0",
+  "description": "OpenAI-compatible proxy bridging GitHub Copilot (OAuth) to local tools like memory-lancedb-pro",
+  "type": "module",
+  "main": "copilot-bridge.js",
+  "scripts": {
+    "start": "node copilot-bridge.js"
+  },
+  "keywords": ["github-copilot", "ollama", "openai", "memory-lancedb-pro", "openclaw"],
+  "license": "MIT"
+}

@@ -1,0 +1,12 @@
+[Unit]
+Description=Copilot Bridge - OpenAI-compatible proxy for GitHub Copilot
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/home/pi/.nvm/versions/node/v22.22.2/bin/node /home/pi/.openclaw/tools/copilot-bridge.js
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target
