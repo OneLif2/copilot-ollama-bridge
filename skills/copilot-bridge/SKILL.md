@@ -118,6 +118,35 @@ Expected: plugin installs to `~/.openclaw/extensions/memory-lancedb-pro/`
 
 If you see `plugin already exists`: it's already installed. Skip to Step 6.
 
+### Step 5b — Apply CLI hang fix patch (recommended)
+
+`memory-lancedb-pro@1.1.0-beta.9` has a known issue: `openclaw memory-pro <cmd>` CLI commands print results then **hang indefinitely** because background `setTimeout`/`setInterval` keep the Node event loop alive.
+
+The fix is in this repo at `patches/memory-lancedb-pro-cli-fix.patch`. Apply it:
+
+```bash
+# Backup first
+cp ~/.openclaw/extensions/memory-lancedb-pro/index.ts \
+   ~/.openclaw/extensions/memory-lancedb-pro/index.ts.bak-$(date +%Y%m%d-%H%M%S)
+
+# Download and apply
+curl -fsSL https://raw.githubusercontent.com/OneLif2/copilot-ollama-bridge/main/patches/memory-lancedb-pro-cli-fix.patch \
+  -o /tmp/mldp-cli-fix.patch
+cd ~/.openclaw/extensions/memory-lancedb-pro
+patch -p1 < /tmp/mldp-cli-fix.patch
+
+# Clear jiti cache (mandatory after editing plugin .ts files)
+rm -rf /tmp/jiti/
+```
+
+**Verify the fix:**
+```bash
+time openclaw memory-pro stats
+# Should complete in <2s. Without the patch it hangs forever.
+```
+
+> **Re-apply after every plugin update.** `openclaw plugins update memory-lancedb-pro` will overwrite the patched file. Until the fix is merged upstream (https://github.com/CortexReach/memory-lancedb-pro), keep the patch handy.
+
 ---
 
 ## Step 6 — Apply config to openclaw.json
