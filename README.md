@@ -191,6 +191,12 @@ If the bridge is not running or Copilot is unavailable, fall back to local Ollam
 - Gemma 4 models (all variants) require 7+ GB RAM — **not compatible** with 8 GB Jetson
 - Safe model size limit on 8 GB Jetson: ~3.5 GB (use `gemma3:4b` or `qwen3:4b`)
 
+## Patches
+
+This repo also ships a small patch fixing a CLI hang in `memory-lancedb-pro@1.1.0-beta.9`:
+
+- [`patches/memory-lancedb-pro-cli-fix.patch`](patches/memory-lancedb-pro-cli-fix.patch) — makes `openclaw memory-pro <cmd>` exit cleanly instead of hanging on background timers. See [`patches/README.md`](patches/README.md) for details and apply instructions.
+
 ## License
 
 MIT

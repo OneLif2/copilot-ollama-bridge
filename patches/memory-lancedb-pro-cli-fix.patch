@@ -1,0 +1,68 @@
+--- a/index.ts	2026-04-25 21:08:15.007523635 +0800
++++ b/index.ts	2026-04-25 21:10:18.968902982 +0800
+@@ -1588,6 +1588,8 @@
+   kind: "memory" as const,
+ 
+   register(api: OpenClawPluginApi) {
++    const isMemoryCliInvocation = process.argv.some((arg) => arg === "memory-pro");
++
+     // Parse and validate configuration
+     const config = parsePluginConfig(api.pluginConfig);
+ 
+@@ -1667,9 +1669,11 @@
+         const noiseBank = new NoisePrototypeBank(
+           (msg: string) => api.logger.debug(msg),
+         );
+-        noiseBank.init(embedder).catch((err) =>
+-          api.logger.debug(`memory-lancedb-pro: noise bank init: ${String(err)}`),
+-        );
++        if (!isMemoryCliInvocation) {
++          noiseBank.init(embedder).catch((err) =>
++            api.logger.debug(`memory-lancedb-pro: noise bank init: ${String(err)}`),
++          );
++        }
+ 
+         smartExtractor = new SmartExtractor(store, embedder, llmClient, {
+           user: "User",
+@@ -1983,6 +1987,10 @@
+       { commands: ["memory-pro"] },
+     );
+ 
++    if (isMemoryCliInvocation) {
++      return;
++    }
++
+     // ========================================================================
+     // Lifecycle Hooks
+     // ========================================================================
+@@ -3122,10 +3130,13 @@
+         };
+ 
+         // Fire-and-forget: allow gateway to start serving immediately.
+-        setTimeout(() => void runStartupChecks(), 0);
++        // Do not keep short-lived CLI commands (for example `memory-pro stats`)
++        // alive just because the service registered background maintenance work.
++        const startupChecksTimer = setTimeout(() => void runStartupChecks(), 0);
++        startupChecksTimer.unref?.();
+ 
+         // Check for legacy memories that could be upgraded
+-        setTimeout(async () => {
++        const legacyUpgradeTimer = setTimeout(async () => {
+           try {
+             const upgrader = createMemoryUpgrader(store, null);
+             const counts = await upgrader.countLegacy();
+@@ -3139,10 +3150,13 @@
+             // Non-critical: silently ignore
+           }
+         }, 5_000);
++        legacyUpgradeTimer.unref?.();
+ 
+         // Run initial backup after a short delay, then schedule daily
+-        setTimeout(() => void runBackup(), 60_000); // 1 min after start
++        const initialBackupTimer = setTimeout(() => void runBackup(), 60_000); // 1 min after start
++        initialBackupTimer.unref?.();
+         backupTimer = setInterval(() => void runBackup(), BACKUP_INTERVAL_MS);
++        backupTimer.unref?.();
+       },
+       stop: async () => {
+         if (backupTimer) {
