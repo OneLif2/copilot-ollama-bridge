@@ -253,3 +253,45 @@ openclaw gateway restart
 | `autoRecall` not injecting memories | Default is `false` — set `"autoRecall": true` explicitly |
 | No memories after conversation | Need `extractMinMessages: 2` turns before extraction fires |
 | jiti cache error after plugin update | `rm -rf /tmp/jiti/ && openclaw gateway restart` |
+
+---
+
+## Health Check
+
+Run this after setup (or any time you suspect the pipeline is broken):
+
+```bash
+bash ~/.openclaw/tools/scripts/check-memory.sh
+# or if installed from the repo:
+bash ~/path/to/copilot-ollama-bridge/scripts/check-memory.sh
+```
+
+What it checks (no `curl` required — uses `node` for HTTP tests):
+
+| Check | How |
+|---|---|
+| Bridge service active | `systemctl --user is-active` |
+| LLM endpoint replies | HTTP POST to `/v1/chat/completions` |
+| Ollama embedding returns vectors | HTTP POST to `/v1/embeddings` |
+| Plugin configured in `openclaw.json` | Direct JSON parse (avoids CLI hang) |
+| LanceDB files present | `~/.openclaw/memory/lancedb-pro/` |
+| Embedding pipeline | Two parallel embed calls |
+| autoRecall firing | `openclaw logs --plain` grep |
+
+**Known limitation:** `openclaw memory-pro stats/search` hang in non-TTY
+contexts (background `setInterval` keeps Node alive — upstream bug in
+`memory-lancedb-pro@1.1.0-beta.9`). The script works around this by reading
+`openclaw.json` and the LanceDB directory directly instead of using the CLI.
+Apply `patches/memory-lancedb-pro-cli-fix.patch` to fix the CLI if needed.
+
+**`usage_limit_reached` warning:**
+If the bridge LLM check returns a usage-limit warning, smart extraction calls
+will fail until the quota resets (the `resets_at` timestamp is shown). Embedding
+and recall still work — only new memory extraction is affected.
+
+Environment overrides:
+```bash
+CODEX_BRIDGE_MODEL=openai-codex/gpt-5.5 \
+MEMORY_EMBED_MODEL=mxbai-embed-large \
+bash scripts/check-memory.sh
+```
